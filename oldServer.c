@@ -16,10 +16,8 @@
 #include <unistd.h>
 
 #define MAX_SOCKET_CONNECTIONS 5
-#define NUM_PLAYERS_TO_START 2
 
 PlayerConnection **playerConnections;
-Player **players;
 GameState *gameState;
 
 // Player movement commands
@@ -28,8 +26,91 @@ int backward = 0b00100;
 int left = 0b00010;
 int right = 0b00001;
 
-void serverStartGame();
-void *handleClientConnection(void *args) { return NULL; }
+// thread function for new connecting clients
+// Function needs to be passed to a spawn thread, constantly recvs player input,
+// handles the physics, and responds with player position data for all players
+// connected
+void *handleClientConnection(void *args) {
+  /*// cast to the struct that new need, read the socket from the struct*/
+  /*ClientConnectionData *clientData = (ClientConnectionData *)args;*/
+  /*PlayerInit playerInit = initializePlayerConnection();*/
+  /*printf("Initialzed player connection\n");*/
+  /*if (playerInit.validToJoin == 0b0) {*/
+  /*  printf("Error joining\n");*/
+  /*  return NULL;*/
+  /*}*/
+  /*printf("Player valid to join\n");*/
+  /**/
+  /*int socketFd = clientData->socketFd;*/
+  /*Vector2 StartPos = playerInit.startPos;*/
+  /**/
+  /*Player *player = malloc(sizeof(Player));*/
+  /*players[playerInit.playerId] = player;*/
+  /*// ready to now accept input from the client, recvs data of type
+   * playerInput*/
+  /*// struct, and handles physics*/
+  /**/
+  /*// Player connection data*/
+  /*char connected = 1;*/
+  /*PlayerInput playerInput;*/
+  /*/*printf("Player id before\n");*/
+  /*int playerId = playerInit.playerId;*/
+  /*/*printf("Player id after\n");*/
+  /*// Return player position to be rendered on client side*/
+  /*PlayerPosition playerPosition;*/
+  /*Vector2 vel = (Vector2){0, 0};*/
+
+  printf("Entering connected loop\n");
+
+  while (1) {
+    /*  recv(socketFd, &playerInput, sizeof(playerInput), 0);*/
+    /*  printf("Player input recved\n");*/
+    /*  uint8_t input = playerInput.input;*/
+    /*  float rotationInRadians = player->rot * (M_PI / 180.0f);*/
+    /*  printf("Taking right and left input\n");*/
+    /*  if (input & right) {*/
+    /*    // apply right velocity*/
+    /*    player->rot += PLAYER_ROTATION_SPEED;*/
+    /*  }*/
+    /*  if (input & left) {*/
+    /*    // apply left velocity*/
+    /*    player->rot -= PLAYER_ROTATION_SPEED;*/
+    /*  }*/
+    /*  // take in player input data,*/
+    /*  // mask bits to figure out which input is currently pressed*/
+    /*  Vector2 direction = (Vector2){*/
+    /*      cos(rotationInRadians),*/
+    /*      sin(rotationInRadians),*/
+    /*  };*/
+    /*  player->rot = fmodf(player->rot + 360.0f, 360.0f);*/
+    /*  printf("Input: %d\n", input);*/
+    /**/
+    /*  if (input & forward) {*/
+    /*    // apply forward velocity*/
+    /*    printf("Forward\n");*/
+    /*    player->vel.x += direction.x * PLAYER_FORWARD_SPEED;*/
+    /*    player->vel.y += direction.y * PLAYER_FORWARD_SPEED;*/
+    /*  }*/
+    /*  if (input & backward) {*/
+    /*    // apply backward velocity*/
+    /*    player->vel.x -= direction.x * PLAYER_FORWARD_SPEED;*/
+    /*    player->vel.y -= direction.y * PLAYER_FORWARD_SPEED;*/
+    /*  }*/
+    /**/
+    /*  // Update player position*/
+    /*  player->pos.x += player->vel.x;*/
+    /*  player->pos.y += player->vel.y;*/
+    /**/
+    /*  // should return object here*/
+    /**/
+    /*  // dampen*/
+    /*}*/
+    /**/
+    /*return NULL;*/
+  }
+}
+
+/* Function for client to connect, function for server to start */
 
 int serverAccept(const char *host, int port) {
   // Check to see what IP and port it should be initiated on
@@ -87,7 +168,7 @@ int serverAccept(const char *host, int port) {
     return 1;
   }
 
-  printf("Server: Socket set up success, awaiting connectionss\n");
+  printf("Socket set up success, awaiting connectionss\n");
 
   // begin main loop of accpeting client connections
   int connectingSocket;
@@ -95,122 +176,77 @@ int serverAccept(const char *host, int port) {
   socklen_t connectingAddrLen = sizeof(connectingAddr);
   GamePacket recvPacket;
   GamePacket sendPacket;
-  PlayerConnection *playerConnection;
-  Player *player;
-  int playerId;
-  int bytesRecvd;
 
   int numPlayers = 0;
-  printf("Server: Entering connection loop\n");
   while (1) {
     connectingSocket = accept(socketFd, &connectingAddr, &connectingAddrLen);
-    printf("Server: Connecting socket accepted\n");
     if (connectingSocket < 0) {
       perror("Error on accept call");
       return -1;
     }
-
-    bytesRecvd = recv(connectingSocket, &recvPacket, sizeof(recvPacket), 0);
-    printf("Server: Bytes recved: %d\n", bytesRecvd);
-    printf("Server: Packet is of type %d\n", recvPacket.type);
-
+    recv(connectingSocket, &recvPacket, sizeof(recvPacket), 0);
     if (recvPacket.type == PACKET_JOIN_REQUEST) {
-      printf("Server: Packet is of type join request\n");
       // Check if player is valid to join, and game is not ongoing
       if (numPlayers < MAX_PLAYERS && gameState->gameState == GAME_WAITING) {
-        printf("Server: Player is able to join\n");
         // Player is valid to join Player id would be numPlayers
         // Store player's name, colors, send back id
         sendPacket.type = PACKET_GAME_STATUS;
         sendPacket.data.gameStatus.canJoin = 0b1;
-        printf("Server: Created send packet\n");
-        send(connectingSocket, &sendPacket, sizeof(sendPacket), 0);
-        printf("Server: sent send packet\n");
         // Add player to the list of players
-        // player id, set that part of players to the correct data
-        printf("Server: Creating player connection\n");
-        playerConnection = malloc(sizeof(PlayerConnection));
-        playerConnections[playerId] = playerConnection;
-        playerConnection->socket = connectingSocket;
-        playerConnection->playerId = numPlayers;
-        printf("Server: Created player connection\n");
-
-        printf("Server: Creating player object\n");
-        // Init player data going into players list
-        player = malloc(sizeof(Player));
-        player->pos = (Vector2){0, 0};
-        player->rot = 0.0f;
-        player->vel = (Vector2){0, 0};
-        player->isActive = 0b1;
-        printf("Server: Created player object\n");
-        players[playerId] = player;
-        printf("Server: Attaching player object\n");
-
-        printf("Server: Player %d Joined, lobby now %d/%d\n", numPlayers,
-               numPlayers + 1, MAX_PLAYERS);
-        numPlayers++;
-        if (numPlayers == NUM_PLAYERS_TO_START) {
-          break;
-        }
 
       } else if (gameState->gameState == GAME_ONGOING) {
-        printf("Server: Client attempting to join ongoing game\n");
         sendPacket.type = PACKET_GAME_STATUS;
         sendPacket.data.gameStatus.canJoin = 0b0;
         sendPacket.data.gameStatus.gameStarted = 0b1;
         printf("Cannot connect to ongoing game\n");
-        continue;
+        return -1;
       } else {
         sendPacket.type = PACKET_GAME_STATUS;
         sendPacket.data.gameStatus.canJoin = 0b0;
         printf("Cannot connect to game\n");
-        continue;
+        return -1;
       }
-    } else {
-      printf("Server: Error, packet is not of type GameRequest, instead of "
-             "type: %d",
-             recvPacket.type);
-      continue;
     }
-    // Connections are done, start the game
 
     // As player joins, add to list of players, each will need their own
     // worker thread
+
+    /*printf("Creating client connection struct\n");*/
+    /*ClientConnectionData *clientData = calloc(1,
+     * sizeof(ClientConnectionData));*/
+    /*if (clientData == NULL) {*/
+    /*  printf("Error creating client data struct\n");*/
+    /*  return 1;*/
+    /*}*/
+    /*clientData->socketFd = connectingSocket;*/
+    /*clientData->playerId = numPlayers++;*/
+    /*printf("Client connection struct created\n");*/
     /*pthread_t thread_id;*/
     /*pthread_create(&thread_id, NULL, handleClientConnection, clientData);*/
     /*pthread_join(thread_id, NULL);*/
+    /*printf("Successfully created thread for client: id:%d",*/
+    /*       clientData->playerId);*/
+    /**/
+    /*// Send out array of player data*/
+    /*printf("Sending out player data\n");*/
+    /*send(connectingSocket, players, sizeof(players), 0);*/
   }
 
-  serverStartGame();
   // done with connections, can close socket
   close(socketFd);
-  return 0;
-}
-
-void *broadcastThreadFunction() { return NULL; }
-
-void serverStartGame() {
-  Color playerColors[] = {RED, YELLOW, GREEN, BLUE, PINK};
-  // Send out the init packets
-  PlayerConnection *pc;
-  pc = playerConnections[0];
-  while (pc != NULL) {
-    // Send a GameInit to all of the PlayerConnections, takes the # of players,
-    // their id, and the array of Colors
-  }
-  // Spin off broadcast thread to send out packets to clients
-  pthread_t broadcastThreadId;
-  pthread_create(&broadcastThreadId, NULL, broadcastThreadFunction(), NULL);
-  pthread_join(broadcastThreadId, NULL);
 }
 
 int setupServer() {
+  /*char host[256];*/
+  /*int port;*/
+  /*printf("\nServer: Enter Server IP: ");*/
+  /*scanf("%s", host);*/
+  /**/
+  /*printf("\nServer: Enter Server Port: ");*/
+  /*scanf("%d", &port);*/
   char host[] = "localhost";
   int port = 9876;
   // init the list of players;
-  playerConnections = malloc(sizeof(PlayerConnection *) * MAX_PLAYERS);
-  // memset to make sure they are null
-  memset(playerConnections, 0, sizeof(PlayerConnection *) * MAX_PLAYERS);
   players = malloc(sizeof(Player *) * MAX_PLAYERS);
   // memset to make sure they are null
   memset(players, 0, sizeof(Player *) * MAX_PLAYERS);
@@ -227,3 +263,9 @@ int setupServer() {
 
   return 0;
 }
+
+/*int main(void) {*/
+/*  setupServer();*/
+/**/
+/*  return 0;*/
+/*}*/

@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 /*const int WINDOW_WIDTH = 800;*/
 /*const int WINDOW_HEIGHT = 800;*/
@@ -95,31 +97,6 @@ void updatePlayer(Player *player) {
   player->vel.y *= 0.8f;
 }
 
-void sendPlayerInput(int socketFd) {
-
-  /*typedef struct {*/
-  /*  uint8_t input;*/
-  /*  float rot;*/
-  /*} PlayerInput;*/
-
-  PlayerInput input;
-  uint8_t preInput = input.input;
-  preInput = 0;
-  if (IsKeyDown(KEY_UP))
-    preInput += 0b01000;
-  if (IsKeyDown(KEY_DOWN))
-    preInput += 0b00100;
-  if (IsKeyDown(KEY_LEFT))
-    preInput += 0b00010;
-  if (IsKeyDown(KEY_RIGHT))
-    preInput += 0b00001;
-  input.input = preInput;
-
-  printf("Client Input: %d, %d\n", input.input, preInput);
-
-  send(socketFd, (const void *)&input, sizeof(input), 0);
-}
-
 int main(int argc, char *argv[]) {
   // Check args for client or server call
   if (argc != 2) {
@@ -129,6 +106,22 @@ int main(int argc, char *argv[]) {
 
   if (strcmp(argv[1], "server") == 0) {
     setupServer();
+    return 1;
+  }
+  if (strcmp(argv[1], "test") == 0) {
+    int numClients = 2;
+    for (int i = 0; i < numClients; i++) {
+      if (fork() == 0) {
+        // child process
+        printf("Client: calling setupClient>%d\n", i);
+        setupClient();
+        return 0;
+      }
+    }
+    // parent process waiting
+    for (int i = 0; i < numClients; i++) {
+      wait(NULL);
+    }
     return 1;
   }
 

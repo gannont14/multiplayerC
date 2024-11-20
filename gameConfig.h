@@ -17,16 +17,22 @@ typedef struct {
   Vector2 vel;
   float rot;
   uint8_t isActive;
-
 } Player;
 
-#define WAITING 1
-#define IN_PROGRESS 2
-#define GAME_ENDING 3
+typedef struct {
+  int socket;
+  int playerId;
+} PlayerConnection;
+
+enum ValidGameState {
+  GAME_WAITING,
+  GAME_ONGOING,
+  GAME_ENDING,
+};
 
 typedef struct {
-  char state;
-  char numPlayersConnected;
+  enum ValidGameState gameState;
+  int numPlayersConnected;
 } GameState;
 
 #endif
