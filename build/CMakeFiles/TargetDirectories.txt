@@ -1,0 +1,3 @@
+/Users/gannontubbs/Projects/multiplayerC/build/CMakeFiles/main.dir
+/Users/gannontubbs/Projects/multiplayerC/build/CMakeFiles/edit_cache.dir
+/Users/gannontubbs/Projects/multiplayerC/build/CMakeFiles/rebuild_cache.dir

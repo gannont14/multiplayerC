@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/gannontubbs/Projects/multiplayerC/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc  -I/opt/homebrew/include  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -o CMakeFiles/main.dir/main.c.o -c /Users/gannontubbs/Projects/multiplayerC/main.c",
+  "file": "/Users/gannontubbs/Projects/multiplayerC/main.c",
+  "output": "CMakeFiles/main.dir/main.c.o"
+}
+]
